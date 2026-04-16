@@ -4,7 +4,7 @@ import requests
 import yt_dlp
 from flask import request, jsonify, Response, url_for, after_this_request
 
-DOWNLOAD_FOLDER = '/tmp'
+DOWNLOAD_FOLDER = os.environ.get('TMPDIR', '/tmp')
 
 def extract_video_id(url):
     import re

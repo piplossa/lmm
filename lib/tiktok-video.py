@@ -4,7 +4,7 @@ import requests
 from bs4 import BeautifulSoup
 from flask import request, jsonify, send_file, after_this_request, url_for
 
-DOWNLOAD_FOLDER = '/tmp'
+DOWNLOAD_FOLDER = os.environ.get('TMPDIR', '/tmp')
 
 def register(app):
     @app.route('/Tiktok_videodl', methods=['GET'])
