@@ -11,7 +11,8 @@ logging.basicConfig(level=logging.DEBUG, format=typical_format)
 app = Flask(__name__)
 app.logger.setLevel(logging.DEBUG)
 
-DOWNLOAD_FOLDER = '/tmp'
+PORT = int(os.environ.get('PORT', 2005))
+DOWNLOAD_FOLDER = os.environ.get('TMPDIR', '/tmp')
 
 def cleanup_old_files(max_age_minutes=30):
     """Elimina archivos de /tmp mayores a max_age_minutos"""
@@ -50,8 +51,7 @@ def load_endpoints():
 # Endpoint para servir archivos con limpieza automática
 @app.route('/download/<filename>')
 def serve_download(filename):
-    tmp_dir = '/tmp'
-    file_path = os.path.join(tmp_dir, filename)
+    file_path = os.path.join(DOWNLOAD_FOLDER, filename)
 
     if not os.path.isfile(file_path):
         app.logger.warning(f"Intento de descargar archivo inexistente: {file_path}")
@@ -68,7 +68,7 @@ def serve_download(filename):
         return response
 
     app.logger.debug(f"Enviando archivo: {file_path}")
-    return send_from_directory(tmp_dir, filename, as_attachment=True)
+    return send_from_directory(DOWNLOAD_FOLDER, filename, as_attachment=True)
 
 # Inicializar
 if __name__ == '__main__':
@@ -88,4 +88,4 @@ if __name__ == '__main__':
         if not rule.rule.startswith('/static'):
             print(f"  {rule.methods & {'GET', 'POST'}} {rule.rule}")
     print("=============================\n")
-    app.run(debug=True, port=2005, host='0.0.0.0')
+    app.run(debug=True, port=PORT, host='0.0.0.0')
