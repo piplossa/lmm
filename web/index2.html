@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wapi</title>
+
+  <!-- Fuentes e iconos -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+
+  
+
+  <style>
+    /* === Variables de Tema === */
+    :root {
+      --bg-primary: #0a0a12;
+      --bg-secondary: #141420;
+      --fg-primary: #ffffff;
+      --fg-secondary: #b8c5d6;
+      --accent-primary: #00d4ff;
+      --accent-secondary: #7c3aed;
+      --accent-tertiary: #ff6b35;
+      --accent-gradient: linear-gradient(135deg, #00d4ff 0%, #7c3aed 50%, #ff6b35 100%);
+      --card-bg: rgba(20, 20, 32, 0.85);
+      --card-border: rgba(0, 212, 255, 0.15);
+      --shadow-glow: 0 8px 32px rgba(0, 212, 255, 0.1);
+      --shadow-dark: 0 12px 40px rgba(0, 0, 0, 0.8);
+      --font-primary: 'Poppins', sans-serif;
+      --font-tech: 'Orbitron', monospace;
+      --transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.84);
+      --star-count: 600;
+    }
+
+    /* === API URL y Botón Copiar === */
+    .api-url {
+      margin-top: 1rem;
+      display: flex;
+      align-items: center;
+      font-family: var(--font-tech);
+      font-size: 0.9rem;
+      color: var(--fg-secondary);
+    }
+    .api-url input {
+      flex: 1;
+      background: rgba(20,20,32,0.6);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 0.5rem;
+      margin-right: 0.5rem;
+      color: var(--fg-primary);
+      font-family: var(--font-tech);
+    }
+    .copy-btn {
+      background: var(--accent-primary);
+      border: none;
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      color: #000;
+      font-weight: 600;
+      transition: var(--transition);
+    }
+    .copy-btn:hover {
+      opacity: 0.8;
+    }
+
+     /* === Secciones en la sidebar === */
+  .sidebar-section {
+    margin-bottom: 1.5rem;
+    padding: 0 1rem;
+  }
+  .section-title {
+    font-size: 0.9rem;
+    color: var(--fg-secondary);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+    border-left: 3px solid var(--accent-secondary);
+    padding-left: 0.5rem;
+  }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { 
+      width: 100%; min-height: 100vh; 
+      font-family: var(--font-primary); 
+      background: var(--bg-primary); 
+      color: var(--fg-primary); 
+      overflow-x: hidden;
+    }
+
+    /* === Fondo Estrellado con Luna Mejorado === */
+    canvas { 
+      position: fixed; 
+      inset: 0; 
+      z-index: 0; 
+      background: radial-gradient(ellipse at bottom, #0a0a12 0%, #000000 100%);
+    }
+
+    /* === Botón Toggle Mejorado === */
+    #toggle-btn {
+      position: fixed; top: 1.5rem; left: 1.5rem;
+      width: 3.2rem; height: 3.2rem;
+      border: 2px solid var(--accent-primary);
+      border-radius: 16px;
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      box-shadow: var(--shadow-glow);
+      background-image: url('https://raw.githubusercontent.com/piplossa/cosas/main/42218.jpg');
+      background-size: contain;      /* ajusta a ancho/alto */
+      background-repeat: no-repeat;
+      background-position: center;
+      display: flex; justify-content: center; align-items: center;
+      cursor: pointer; z-index: 1003;
+      transition: var(--transition);
+      overflow: hidden;
+    }
+
+    #mute-btn {
+    position: fixed;
+    top: 1.5rem;
+    left: 5.5rem;                /* separarlo un poco del toggle */
+    width: 3.2rem;
+    height: 3.2rem;
+    border: 2px solid var(--accent-primary);
+    border-radius: 16px;
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    box-shadow: var(--shadow-glow);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    z-index: 1003;
+    transition: var(--transition);
+    background-image: url('https://raw.githubusercontent.com/piplossa/cosas/main/musbackround1_04.jpg');
+    background-size: contain;      /* ajusta a ancho/alto */
+    background-repeat: no-repeat;
+    background-position: center;
+    }
+    #mute-btn i {
+    color: var(--accent-primary);
+    font-size: 1.6rem;
+    }
+    #mute-btn:hover {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 12px 40px rgba(0,212,255,0.2);
+    }
+    #mute-btn:hover i {
+    color: white;
+    transform: rotate(-180deg);
+    }
+    
+    #toggle-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--accent-gradient);
+      opacity: 0;
+      transition: var(--transition);
+      z-index: -1;
+    }
+    
+    #toggle-btn:hover {
+      transform: scale(1.1) rotate(5deg);
+      box-shadow: 0 12px 40px rgba(0, 212, 255, 0.2);
+    }
+    
+    #toggle-btn:hover::before {
+      opacity: 0.3;
+    }
+    
+    #toggle-btn i { 
+      color: var(--accent-primary); 
+      font-size: 1.6rem;
+      transition: var(--transition);
+    }
+    
+    #toggle-btn:hover i {
+      color: white;
+      transform: rotate(-180deg);
+    }
+
+    /* === Sidebar Mejorado === */
+    #sidebar {
+      position: fixed; top: 0; left: 0;
+      width: 320px; height: 100vh;
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      border-right: 1px solid var(--card-border);
+      box-shadow: var(--shadow-dark);
+      padding-top: 5rem;
+      transform: translateX(-320px);
+      transition: var(--transition);
+      z-index: 1002;
+      display: flex; flex-direction: column;
+      overflow-y: auto;
+    }
+    
+    #sidebar.open { 
+      transform: translateX(0);
+    }
+    
+    #sidebar::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: var(--accent-gradient);
+      opacity: 0.05;
+      z-index: -1;
+    }
+    
+    #sidebar .logo {
+      text-align: center;
+      padding: 0 2rem 2rem;
+      border-bottom: 1px solid var(--card-border);
+      margin-bottom: 1rem;
+    }
+    
+    #sidebar .logo h1 {
+      font-family: var(--font-tech);
+      font-size: 2rem;
+      font-weight: 900;
+      background: var(--accent-gradient);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
+    }
+    
+    #sidebar button {
+      border: none;
+      background: none;
+      text-align: left;
+      padding: 1.2rem 2rem;
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--fg-secondary);
+      cursor: pointer;
+      position: relative;
+      transition: var(--transition);
+      border-left: 3px solid transparent;
+    }
+    
+    #sidebar button::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0;
+      width: 0; height: 100%;
+      background: var(--accent-gradient);
+      transition: var(--transition);
+      z-index: -1;
+    }
+    
+    #sidebar button:hover,
+    #sidebar button.active {
+      color: var(--fg-primary);
+      border-left-color: var(--accent-primary);
+      transform: translateX(8px);
+    }
+    
+    #sidebar button:hover::before,
+    #sidebar button.active::before {
+      width: 100%;
+      opacity: 0.2;
+    }
+
+    /* === Contenido Principal === */
+    #content {
+      position: relative;
+      min-height: 100vh;
+      padding: 2rem;
+      z-index: 1;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 6rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      box-shadow: var(--shadow-glow);
+      padding: 2.5rem;
+      max-width: 900px;
+      width: 100%;
+      display: none;
+      flex-direction: column;
+      animation: slideUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.84);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 2px;
+      background: var(--accent-gradient);
+    }
+    
+    .card.active { display: flex; }
+    
+    @keyframes slideUp {
+      from { 
+        opacity: 0; 
+        transform: translateY(40px) scale(0.95);
+      } 
+      to {
+        opacity: 1; 
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    h2 { 
+      font-family: var(--font-tech);
+      font-weight: 700; 
+      font-size: 2rem;
+      margin-bottom: 2rem; 
+      text-align: center; 
+      background: var(--accent-gradient);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* === Formularios === */
+    .form-group { 
+      margin-bottom: 1.5rem; 
+    }
+    
+    .form-group label { 
+      display: block; 
+      margin-bottom: 0.5rem; 
+      color: var(--accent-primary); 
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    
+    .form-group input {
+      width: 100%; 
+      padding: 1rem 1.2rem;
+      border: 2px solid var(--card-border);
+      border-radius: 12px;
+      background: rgba(20, 20, 32, 0.8);
+      color: var(--fg-primary);
+      font-family: var(--font-primary);
+      font-size: 1rem;
+      transition: var(--transition);
+    }
+    
+    .form-group input:focus { 
+      border-color: var(--accent-primary);
+      outline: none;
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .button {
+      align-self: center;
+      margin-top: 1rem;
+      background: var(--accent-gradient);
+      color: white;
+      padding: 1rem 2.5rem;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: var(--transition);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .button::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: var(--transition);
+    }
+    
+    .button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(0, 212, 255, 0.3);
+    }
+    
+    .button:hover::before {
+      left: 100%;
+    }
+
+    .response {
+      margin-top: 1.5rem;
+      background: rgba(10, 10, 18, 0.8);
+      border: 1px solid var(--card-border);
+      padding: 1.5rem;
+      border-radius: 12px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      color: var(--fg-secondary);
+      max-height: 250px;
+      overflow: auto;
+      backdrop-filter: blur(10px);
+    }
+
+    /* === Dashboard Mejorado === */
+    #dashboard-content {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: rgba(20, 20, 32, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      text-align: center;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 4px;
+      background: var(--accent-gradient);
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0, 212, 255, 0.15);
+      border-color: var(--accent-primary);
+    }
+
+    .stat-title {
+      font-size: 0.9rem;
+      color: var(--fg-secondary);
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      font-family: var(--font-tech);
+      background: var(--accent-gradient);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .stats-table {
+      width: 100%;
+      border-collapse: collapse;
+      border-radius: 12px;
+      overflow: hidden;
+      background: rgba(20, 20, 32, 0.6);
+      backdrop-filter: blur(10px);
+    }
+    
+    .stats-table th,
+    .stats-table td {
+      padding: 1rem;
+      text-align: center;
+      border-bottom: 1px solid var(--card-border);
+    }
+    
+    .stats-table th {
+      background: linear-gradient(90deg, rgba(0, 212, 255, 0.2), rgba(124, 58, 237, 0.2));
+      color: white;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-size: 0.85rem;
+    }
+    
+    .stats-table tbody tr {
+      transition: var(--transition);
+    }
+    
+    .stats-table tbody tr:hover {
+      background: rgba(0, 212, 255, 0.1);
+      transform: scale(1.02);
+    }
+
+    .stats-table tbody td:first-child {
+      text-align: left;
+      font-weight: 500;
+    }
+
+    /* === Sección Info === */
+    .info-section {
+      margin-top: 2rem;
+      padding: 2rem;
+      background: rgba(20, 20, 32, 0.4);
+      border-radius: 16px;
+      border: 1px solid var(--card-border);
+    }
+
+    .info-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .info-header h3 {
+      font-family: var(--font-tech);
+      font-size: 1.8rem;
+      background: var(--accent-gradient);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1rem;
+    }
+
+    .info-text {
+      font-size: 1.1rem;
+      line-height: 1.6;
+      color: var(--fg-secondary);
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .creator-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .creator-card {
+      background: rgba(20, 20, 32, 0.6);
+      border: 2px solid var(--card-border);
+      border-radius: 20px;
+      padding: 2rem;
+      text-align: center;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .creator-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: var(--accent-gradient);
+      opacity: 0;
+      transition: var(--transition);
+      z-index: -1;
+    }
+
+    .creator-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 20px 40px rgba(0, 212, 255, 0.2);
+      border-color: var(--accent-primary);
+    }
+
+    .creator-card:hover::before {
+      opacity: 0.05;
+    }
+
+    .creator-avatar {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      margin: 0 auto 1.5rem;
+      background: var(--accent-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      color: white;
+      border: 4px solid var(--accent-primary);
+      box-shadow: 0 8px 20px rgba(0, 212, 255, 0.3);
+      transition: var(--transition);
+    }
+
+    .creator-card:hover .creator-avatar {
+      transform: scale(1.1) rotate(5deg);
+      box-shadow: 0 12px 30px rgba(0, 212, 255, 0.5);
+    }
+
+    .creator-name {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--fg-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .creator-role {
+      color: var(--accent-primary);
+      font-weight: 600;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .creator-description {
+      color: var(--fg-secondary);
+      line-height: 1.5;
+      margin-bottom: 1.5rem;
+    }
+
+    .social-links {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    .social-link {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: var(--accent-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      text-decoration: none;
+      font-size: 1.2rem;
+      transition: var(--transition);
+    }
+
+    .social-link:hover {
+      transform: scale(1.2) rotate(-10deg);
+      box-shadow: 0 8px 20px rgba(0, 212, 255, 0.4);
+    }
+
+    /* === Responsive === */
+    @media (max-width: 768px) {
+      #sidebar { width: 280px; }
+      #content { padding: 1rem; padding-top: 5rem; }
+      .card { padding: 1.5rem; }
+      .creator-info { grid-template-columns: 1fr; }
+      h2 { font-size: 1.6rem; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 480px) {
+      .stats-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<audio id="bg-music"
+       src="https://raw.githubusercontent.com/piplossa/cosas/main/musica.mp3"
+       loop>
+</audio>
+  <canvas id="starfield"></canvas>
+  
+  
+  <button id="toggle-btn">
+    <i class="fas fa-bars"></i>
+  </button>
+
+  <button id="mute-btn">
+    <i class="fas fa-volume-up"></i>
+  </button>
+
+  
+  <nav id="sidebar">
+    <div class="logo">
+      <h1>WAPI</h1>
+    </div>
+  </nav>
+  
+  <div id="content"></div>
+
+  <script>
+    /* === Starfield Mejorado con Luna Realista === */
+    const canvas = document.getElementById('starfield');
+    const ctx = canvas.getContext('2d');
+    let stars = [];
+    let moon = { x: 0, y: 0, radius: 80, opacity: 0.8, craters: [] };
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      moon.x = canvas.width - 150;
+      moon.y = 120;
+      
+      // Generar cráteres para la luna
+      moon.craters = Array.from({length: 15}, () => ({
+        x: Math.random() * moon.radius * 2 - moon.radius,
+        y: Math.random() * moon.radius * 2 - moon.radius,
+        radius: Math.random() * 15 + 5,
+        depth: Math.random() * 0.4 + 0.1
+      }));
+    }
+
+    function initStars() {
+      const starCount = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--star-count'));
+      stars = Array.from({length: starCount}).map(() => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        size: Math.random() * 1.5 + 0.5,
+        speed: Math.random() * 0.5 + 0.2,
+        opacity: Math.random() * 0.7 + 0.3,
+        twinkle: Math.random() * 0.02 + 0.005,
+        color: `hsl(${Math.random() * 60 + 200}, 100%, ${Math.random() * 30 + 70}%)`
+      }));
+      
+      // Añadir algunas estrellas más grandes (más brillantes)
+      for (let i = 0; i < starCount / 20; i++) {
+        stars.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          size: Math.random() * 3 + 2,
+          speed: Math.random() * 0.3 + 0.1,
+          opacity: Math.random() * 0.5 + 0.5,
+          twinkle: Math.random() * 0.01 + 0.005,
+          color: 'white'
+        });
+      }
+    }
+
+    function drawMoon(phase = 1) {
+  /* -------- 1. Preparar (o reutilizar) la textura off‑screen -------- */
+  if (!moon.tex) {
+    const tex = document.createElement('canvas');
+    tex.width = tex.height = moon.radius * 2;
+    const tctx = tex.getContext('2d');
+
+    // Degradado base (ligeramente gris‑azulado)
+    const g = tctx.createRadialGradient(
+      tex.width * 0.35, tex.height * 0.35, moon.radius * 0.25,
+      tex.width * 0.5, tex.height * 0.5, moon.radius
+    );
+    g.addColorStop(0, '#f4f5ff');
+    g.addColorStop(1, '#b6bdd5');
+    tctx.fillStyle = g;
+    tctx.beginPath();
+    tctx.arc(moon.radius, moon.radius, moon.radius, 0, Math.PI * 2);
+    tctx.fill();
+
+    /* Cráteres sutiles */
+    moon.craters.forEach(c => {
+      const cx = moon.radius + c.x * 0.75;
+      const cy = moon.radius + c.y * 0.75;
+      const r  = c.radius * 0.7;
+
+      // Sombra interna
+      tctx.fillStyle = `rgba(90, 90, 110, ${0.35 * c.depth})`;
+      tctx.beginPath();
+      tctx.arc(cx, cy, r, 0, Math.PI * 2);
+      tctx.fill();
+
+      // Borde iluminado (lado "sol")
+      tctx.strokeStyle = `rgba(255,255,255,0.5)`;
+      tctx.lineWidth = 0.8;
+      tctx.beginPath();
+      tctx.arc(cx, cy, r, Math.PI * 0.9, Math.PI * 2.1);
+      tctx.stroke();
+    });
+
+    moon.tex = tex;          // guarda el canvas
+  }
+
+  /* -------- 2. Resplandor exterior -------- */
+  const glow = ctx.createRadialGradient(
+    moon.x, moon.y, moon.radius * 0.6,
+    moon.x, moon.y, moon.radius * 2.8
+  );
+  glow.addColorStop(0, `rgba(255,255,255,${moon.opacity * 0.07})`);
+  glow.addColorStop(0.6, `rgba(210,225,255,${moon.opacity * 0.03})`);
+  glow.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(moon.x, moon.y, moon.radius * 2.8, 0, Math.PI * 2);
+  ctx.fill();
+
+  /* -------- 3. Disco lunar con fase -------- */
+  ctx.save();
+  if (phase < 1) {    // recorta para fases < llena
+    const clipR = moon.radius;
+    const terminator = moon.x + clipR * (1 - 2 * phase);
+    ctx.beginPath();
+    ctx.arc(terminator, moon.y, clipR, 0, Math.PI * 2, true);
+    ctx.clip();
+  }
+
+  ctx.drawImage(
+    moon.tex,
+    moon.x - moon.radius,
+    moon.y - moon.radius
+  );
+  ctx.restore();
+}
+
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Dibujar luna
+      drawMoon();
+      
+      // Dibujar estrellas
+      stars.forEach(star => {
+        star.y -= star.speed;
+        if (star.y < -10) {
+          star.y = canvas.height + 10;
+          star.x = Math.random() * canvas.width;
+        }
+        
+        // Efecto de parpadeo más sutil
+        star.opacity += Math.sin(Date.now() * star.twinkle) * 0.05;
+        star.opacity = Math.max(0.1, Math.min(0.9, star.opacity));
+        
+        ctx.fillStyle = star.color;
+        ctx.globalAlpha = star.opacity;
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.size, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // Destello para estrellas más grandes
+        if (star.size > 1.5) {
+          ctx.fillStyle = 'white';
+          ctx.globalAlpha = star.opacity * 0.3;
+          ctx.beginPath();
+          ctx.arc(star.x, star.y, star.size * 2, 0, 2 * Math.PI);
+          ctx.fill();
+        }
+        
+        ctx.globalAlpha = 1;
+      });
+      
+      requestAnimationFrame(animate);
+    }
+
+    window.addEventListener('resize', () => {
+      resize();
+      initStars();
+    });
+
+    resize();
+    initStars();
+    animate();
+
+    // --- Música de fondo ---
+    const bgMusic = document.getElementById('bg-music');
+    bgMusic.volume = 0.6;      // volumen bajo
+    bgMusic.play().catch(e => {
+    // evitar error en algunos navegadores si no hay interacción aún
+    console.warn('No se pudo reproducir automáticamente:', e);
+    });
+
+
+    /* === Endpoints Config === */
+    const endpoints = [
+        {id:'video2', label:'YouTube Video', section:'YouTube', param:'url', path:'download_video_v2', placeholder:'URL de YouTube'},
+        {id:'audio2', label:'YouTube Audio', section:'YouTube', param:'url', path:'download_audio_v2', placeholder:'URL de YouTube'},
+        {id:'tikvid',label:'TikTok Video', section:'TikTok', param:'url', path:'Tiktok_videodl', placeholder:'URL de TikTok'},
+        {id:'tiksl', label:'TikTok Slides', section:'TikTok', param:'url', path:'Tiktok_slidesdl', placeholder:'URL de TikTok'},
+        {id:'fbvid', label:'Facebook Video', section:'Facebook', param:'url', path:'Facebook_videodl', placeholder:'URL de Facebook'},
+        {id:'search',label:'Buscar YouTube', section:'YouTube', param:'query', path:'search_youtube', placeholder:'Término a buscar'}
+    ];
+
+    /* === Stats === */
+    const stats = {};
+    endpoints.forEach(ep => stats[ep.id] = {calls: 0, total: 0, avg: 0, last: '—'});
+
+    // Calcular estadísticas totales
+    const totalStats = {
+      calls: 0,
+      avgTime: 0,
+      success: 0,
+      errors: 0
+    };
+
+    /* === Generación Dinámica === */
+    const sidebar = document.getElementById('sidebar');
+    const content = document.getElementById('content');
+
+    // Dashboard
+    const dashBtn = document.createElement('button');
+    dashBtn.textContent = 'Dashboard';
+    dashBtn.onclick = () => select('dashboard', dashBtn);
+    sidebar.appendChild(dashBtn);
+
+    const dashCard = document.createElement('div');
+    dashCard.id = 'card-dashboard';
+    dashCard.className = 'card';
+    dashCard.innerHTML = `
+      <h2>Control Center</h2>
+      <div id="dashboard-content">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-title">Total Requests</div>
+            <div class="stat-value" id="total-calls">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-title">Avg. Response</div>
+            <div class="stat-value" id="avg-time">0ms</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-title">Success</div>
+            <div class="stat-value" id="success-count">0</div>
+          </div>
+        </div>
+        
+        <table class="stats-table">
+          <thead>
+            <tr>
+              <th>Endpoint</th>
+              <th>Calls</th>
+              <th>Avg (ms)</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="stats-tbody">
+          </tbody>
+        </table>
+        
+        <div class="info-section">
+          <div class="info-header">
+            <h3>Wapi Platform</h3>
+            <p class="info-text">
+              Plataforma avanzada de descarga multimedia que te permite obtener contenido de las principales 
+              redes sociales de manera rápida y eficiente. Desarrollada con tecnología de vanguardia para 
+              ofrecerte la mejor experiencia de usuario.
+            </p>
+          </div>
+          
+          <div class="creator-info">
+            <div class="creator-card">
+              <div class="creator-avatar">
+                <i class="fas fa-user-cog"></i>
+              </div>
+              <h4 class="creator-name">Desarrollador Principal</h4>
+              <p class="creator-role">Full Stack Developer</p>
+              <p class="creator-description">
+                Especialista en desarrollo web y APIs, enfocado en crear soluciones innovadoras 
+                para la descarga y gestión de contenido multimedia.
+              </p>
+              <div class="social-links">
+                <a href="#" class="social-link"><i class="fab fa-github"></i></a>
+                <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
+                <a href="#" class="social-link"><i class="fas fa-envelope"></i></a>
+              </div>
+            </div>
+            
+            <div class="creator-card">
+              <div class="creator-avatar">
+                <i class="fab fa-whatsapp"></i>
+              </div>
+              <h4 class="creator-name">Canal WhatsApp</h4>
+              <p class="creator-role">Soporte & Updates</p>
+              <p class="creator-description">
+                Únete a nuestro canal oficial de WhatsApp para recibir actualizaciones, 
+                soporte técnico y las últimas novedades de la plataforma.
+              </p>
+              <div class="social-links">
+                <a href="#" class="social-link"><i class="fab fa-whatsapp"></i></a>
+                <a href="#" class="social-link"><i class="fas fa-bell"></i></a>
+                <a href="#" class="social-link"><i class="fas fa-users"></i></a>
+              </div>
+            </div>
+            
+            <div class="creator-card">
+              <div class="creator-avatar">
+                <i class="fas fa-rocket"></i>
+              </div>
+              <h4 class="creator-name">Proyecto Wapi</h4>
+              <p class="creator-role">Open Source</p>
+              <p class="creator-description">
+                Proyecto de código abierto dedicado a democratizar el acceso a herramientas 
+                de descarga multimedia de alta calidad y rendimiento.
+              </p>
+              <div class="social-links">
+                <a href="#" class="social-link"><i class="fab fa-github"></i></a>
+                <a href="#" class="social-link"><i class="fas fa-star"></i></a>
+                <a href="#" class="social-link"><i class="fas fa-download"></i></a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    content.appendChild(dashCard);
+
+    // Endpoints
+let currentSection = null;
+endpoints.forEach(ep => {
+
+  if (ep.section !== currentSection) {
+    currentSection = ep.section;
+    const secDiv = document.createElement('div');
+    secDiv.className = 'sidebar-section';
+    secDiv.innerHTML = `<h3 class="section-title">${currentSection}</h3>`;
+    sidebar.appendChild(secDiv);
+  }
+
+  const btn = document.createElement('button');
+  btn.textContent = ep.label;
+  btn.onclick = () => select(ep.id, btn);
+  sidebar.querySelector('.sidebar-section:last-child').appendChild(btn);
+
+  // 3) Creamos la card asociada (igual que antes)
+  const card = document.createElement('div');
+  card.id = `card-${ep.id}`;
+  card.className = 'card';
+  card.innerHTML = `
+    <h2>${ep.label}</h2>
+    <div class="form-group">
+      <label for="input-${ep.id}">${ep.placeholder}</label>
+      <input id="input-${ep.id}" type="text" placeholder="${ep.placeholder}" />
+    </div>
+    <button class="button" onclick="sendRequest('${ep.path}','${ep.param}','input-${ep.id}','response-${ep.id}')">
+      Enviar Solicitud
+    </button>
+    <div class="response" id="response-${ep.id}">Esperando solicitud...</div>
+  `;
+  content.appendChild(card);
+    });
+
+
+    dashBtn.classList.add('active');
+    dashCard.classList.add('active');
+    updateDashboard();
+
+    /* === Funciones === */
+    function select(id, btn) {
+      document.querySelectorAll('#sidebar button').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(`card-${id}`).classList.add('active');
+      if (id === 'dashboard') updateDashboard();
+    }
+
+    document.getElementById('toggle-btn').addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+    });
+
+    async function sendRequest(path, param, inputId, respId) {
+      const val = document.getElementById(inputId).value;
+      const resp = document.getElementById(respId);
+      if (!val.trim()) {
+        resp.textContent = 'Por favor, ingresa un valor válido';
+        return;
+      }
+
+      // Construir la URL completa de la API
+      const apiUrl = `${window.location.origin}/${path}?${param}=${encodeURIComponent(val)}`;
+      // Mostrar la URL y botón de copia
+      const container = resp.parentElement;
+      let apiDiv = container.querySelector('.api-url');
+      if (!apiDiv) {
+        apiDiv = document.createElement('div');
+        apiDiv.className = 'api-url';
+        container.insertBefore(apiDiv, resp);
+      }
+      apiDiv.innerHTML = `
+        <input type="text" readonly value="${apiUrl}" id="url-${path}" />
+        <button class="copy-btn" onclick="copyToClipboard('url-${path}')">Copiar URL</button>
+      `;
+
+      resp.textContent = 'Procesando solicitud...';
+      try {
+        const res = await fetch(apiUrl);
+        const dat = res.ok ? await res.json() : await res.text();
+        resp.textContent = typeof dat === 'object' ? JSON.stringify(dat, null, 2) : dat;
+      } catch (e) {
+        resp.textContent = 'Error: ' + e.message;
+      }
+    }
+
+    function copyToClipboard(elementId) {
+      const input = document.getElementById(elementId);
+      input.select();
+      document.execCommand('copy');
+      const btn = input.nextElementSibling;
+      const original = btn.textContent;
+      btn.textContent = '¡Copiado!';
+      setTimeout(() => btn.textContent = original, 2000);
+    }
+
+    function pathToId(path) {
+      return endpoints.find(e => e.path === path).id;
+    }
+
+    function record(id, time, status) {
+      const s = stats[id];
+      s.calls++;
+      s.total += time;
+      s.avg = (s.total / s.calls).toFixed(1);
+      s.last = status;
+      
+      // Actualizar tiempo promedio total
+      let totalTime = 0;
+      let totalCalls = 0;
+      Object.values(stats).forEach(stat => {
+        totalTime += stat.total;
+        totalCalls += stat.calls;
+      });
+      totalStats.avgTime = totalCalls > 0 ? (totalTime / totalCalls).toFixed(1) : 0;
+    }
+
+    function updateDashboard() {
+      const tbody = document.getElementById('stats-tbody');
+      let html = '';
+      
+      endpoints.forEach(ep => {
+        const s = stats[ep.id];
+        const statusColor = s.last === 200 ? '#00d4ff' : s.last === 'Error' ? '#ff6b35' : '#7c3aed';
+        html += `
+          <tr>
+            <td>${ep.label}</td>
+            <td>${s.calls}</td>
+            <td>${s.avg}ms</td>
+            <td style="color: ${statusColor}; font-weight: 600;">${s.last}</td>
+          </tr>
+        `;
+      });
+      
+      tbody.innerHTML = html;
+      
+      // Actualizar estadísticas totales
+      document.getElementById('total-calls').textContent = totalStats.calls;
+      document.getElementById('avg-time').textContent = `${totalStats.avgTime}ms`;
+      document.getElementById('success-count').textContent = totalStats.success;
+    }
+
+    // Efecto de partículas en movimiento del mouse
+    document.addEventListener('mousemove', (e) => {
+      const particle = document.createElement('div');
+      particle.style.cssText = `
+        position: fixed;
+        width: 4px;
+        height: 4px;
+        background: radial-gradient(circle, #00d4ff, transparent);
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 1000;
+        left: ${e.clientX}px;
+        top: ${e.clientY}px;
+        animation: particleFade 1s ease-out forwards;
+      `;
+      
+      document.body.appendChild(particle);
+      
+      setTimeout(() => {
+        particle.remove();
+      }, 1000);
+    });
+
+    // Agregar animación CSS para partículas
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes particleFade {
+        0% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: scale(0) translateY(-20px);
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Efecto de escritura para el título
+    function typeWriter(element, text, speed = 100) {
+      let i = 0;
+      element.textContent = '';
+      const timer = setInterval(() => {
+        if (i < text.length) {
+          element.textContent += text.charAt(i);
+          i++;
+        } else {
+          clearInterval(timer);
+        }
+      }, speed);
+    }
+
+    // Aplicar efecto de escritura al cargar
+    setTimeout(() => {
+      const title = document.querySelector('.logo h1');
+      if (title) {
+        typeWriter(title, 'WAPI', 200);
+      }
+    }, 500);
+
+    // Cerrar sidebar al hacer clic fuera
+    document.addEventListener('click', (e) => {
+      if (!sidebar.contains(e.target) && !document.getElementById('toggle-btn').contains(e.target)) {
+        sidebar.classList.remove('open');
+      }
+    });
+
+    // Animación de carga inicial
+    window.addEventListener('load', () => {
+      document.body.style.opacity = '0';
+      setTimeout(() => {
+        document.body.style.transition = 'opacity 1s ease';
+        document.body.style.opacity = '1';
+      }, 100);
+    });
+
+    const muteBtn = document.getElementById('mute-btn');
+    const muteIcon = muteBtn.querySelector('i');
+
+    muteBtn.addEventListener('click', () => {
+    if (bgMusic.paused) {
+        bgMusic.play();
+        muteIcon.classList.replace('fa-volume-mute', 'fa-volume-up');
+    } else {
+        bgMusic.pause();
+        muteIcon.classList.replace('fa-volume-up', 'fa-volume-mute');
+    }
+    });
+
+  </script>
+</body>
+</html>
