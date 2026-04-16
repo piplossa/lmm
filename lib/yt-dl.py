@@ -28,11 +28,12 @@ def register(app):
             return jsonify({'error': 'Falta el parámetro URL'}), 400
 
         ydl_opts = {
-            'format': f'bestvideo[height<={quality}]+bestaudio/best[height<={quality}]' if quality != 'best' else 'best',
+            'format': 'bestvideo+bestaudio/best/mp4',
             'outtmpl': os.path.join(DOWNLOAD_FOLDER, '%(title)s.%(ext)s'),
             'quiet': True,
             'no_warnings': True,
             'extract_flat': False,
+            'merge_output_format': 'mp4',
         }
 
         try:
