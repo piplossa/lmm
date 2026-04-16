@@ -1,0 +1,6 @@
+[build]
+build = ["pip install -r requirements.txt"]
+install = ["apt-get install -y ffmpeg"]
+
+[start]
+start = "python app.py"
