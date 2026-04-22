@@ -1,154 +1,59 @@
-import os
-import random
 import requests
-import yt_dlp
-from flask import request, jsonify, Response, url_for, after_this_request
+from flask import request, jsonify, redirect
 
-DOWNLOAD_FOLDER = os.environ.get('TMPDIR', '/tmp')
-
-def extract_video_id(url):
-    import re
-    match = re.search(r'(?:v=|\/)([0-9A-Za-z_-]{11}).*', url)
-    return match.group(1) if match else None
-
-def cleanup_file(filepath):
-    try:
-        if os.path.exists(filepath):
-            os.remove(filepath)
-    except Exception as e:
-        print(f"Error eliminando {filepath}: {e}")
+# Apuntamos directo al núcleo de Cobalt
+COBALT_URL = "https://dl09.yt-dl.click/api/json"
 
 def register(app):
-    @app.route('/download_video_v2', methods=['GET'])
-    def download_video_v2():
-        url = request.args.get('url')
-        quality = request.args.get('quality', 'best')
-
-        if not url:
-            return jsonify({'error': 'Falta el parámetro URL'}), 400
-
-        ydl_opts = {
-            'format': 'best[ext=mp4]/best',
-            'outtmpl': os.path.join(DOWNLOAD_FOLDER, '%(title)s.%(ext)s'),
-            'quiet': True,
-            'no_warnings': True,
-            'extract_flat': False,
-        }
-
-        try:
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(url, download=True)
-                title = info.get('title', 'video')
-                filename = ydl.prepare_filename(info)
-                ext = os.path.splitext(filename)[1]
-
-                if not os.path.exists(filename):
-                    files = [f for f in os.listdir(DOWNLOAD_FOLDER) if f.endswith(ext)]
-                    if files:
-                        filename = os.path.join(DOWNLOAD_FOLDER, files[-1])
-
-            safe_title = "".join(c for c in title if c.isalpha() or c.isdigit() or c in ' -_').rstrip()[:50]
-            new_filename = f"{random.randint(1, 10**10)}_{safe_title}{ext}"
-            new_filepath = os.path.join(DOWNLOAD_FOLDER, new_filename)
-
-            if os.path.exists(filename):
-                os.rename(filename, new_filepath)
-                filepath = new_filepath
-            else:
-                return jsonify({'error': 'Error al procesar el video'}), 500
-
-            file_url = url_for('serve_download', filename=os.path.basename(filepath), _external=True)
-            
-            return jsonify({
-                'message': 'Video descargado correctamente',
-                'title': title,
-                'quality': quality,
-                'file_url': file_url,
-                'expires_in': '1 hour'
-            })
-
-        except Exception as e:
-            return jsonify({'error': f'Error descargando video: {str(e)}'}), 500
-
+    # 👇 AHORA SE LLAMA EXACTAMENTE COMO TU PANEL LO PIDE
     @app.route('/download_audio_v2', methods=['GET'])
     def download_audio_v2():
         url = request.args.get('url')
+        format_type = request.args.get('format', 'mp3')
 
         if not url:
             return jsonify({'error': 'Falta el parámetro URL'}), 400
 
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'outtmpl': os.path.join(DOWNLOAD_FOLDER, '%(title)s.%(ext)s'),
-            'quiet': True,
-            'no_warnings': True,
-        }
-
         try:
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(url, download=True)
-                title = info.get('title', 'audio')
+            # 1. Construir el payload (cuerpo) que Cobalt exige
+            payload = {
+                "url": url
+            }
+            
+            if format_type == 'mp3':
+                payload["isAudioOnly"] = True
+                payload["aFormat"] = "mp3"
+            else:
+                payload["isAudioOnly"] = False
+                
+            # 2. Cabeceras estrictas para evitar bloqueos
+            headers = {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            }
 
-                audio_files = [f for f in os.listdir(DOWNLOAD_FOLDER) if f.endswith(('.m4a', '.webm', '.mp4', '.opus'))]
-                if audio_files:
-                    filepath = os.path.join(DOWNLOAD_FOLDER, audio_files[-1])
-                else:
-                    return jsonify({'error': 'Error al procesar el audio'}), 500
+            # 3. Ataque directo con POST
+            response = requests.post(COBALT_URL, json=payload, headers=headers, timeout=60)
+            data = response.json()
 
-            safe_title = "".join(c for c in title if c.isalpha() or c.isdigit() or c in ' -_').rstrip()[:50]
-            ext = os.path.splitext(filepath)[1]
-            new_filename = f"{random.randint(1, 10**10)}_{safe_title}{ext}"
-            new_filepath = os.path.join(DOWNLOAD_FOLDER, new_filename)
-            os.rename(filepath, new_filepath)
-
-            file_url = url_for('serve_download', filename=os.path.basename(new_filepath), _external=True)
-
-            return jsonify({
-                'message': 'Audio descargado correctamente',
-                'title': title,
-                'file_url': file_url,
-                'format': ext.replace('.', '').upper(),
-                'expires_in': '1 hour'
-            })
+            # 4. Cobalt usa 'redirect' o 'stream'
+            status = data.get('status')
+            
+            if status in ['redirect', 'stream']:
+                dl_url = data.get('url')
+                if dl_url:
+                    # Redirige al bot de Go directo al archivo crudo
+                    return redirect(dl_url, code=302)
+                
+                return jsonify({
+                    'message': 'Archivo listo',
+                    'file_url': dl_url,
+                    'method': 'cobalt-dl09'
+                })
+            else:
+                error_text = data.get('text', 'Error desconocido del servidor')
+                return jsonify({'error': 'Error procesando video', 'details': error_text}), 400
 
         except Exception as e:
-            return jsonify({'error': f'Error descargando audio: {str(e)}'}), 500
-
-    @app.route('/get_streams', methods=['GET'])
-    def get_video_streams():
-        url = request.args.get('url')
-
-        if not url:
-            return jsonify({'error': 'Falta el parámetro URL'}), 400
-
-        ydl_opts = {
-            'quiet': True,
-            'no_warnings': True,
-            'dump_single_json': True,
-        }
-
-        try:
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(url, download=False)
-
-            formats = []
-            for f in info.get('formats', []):
-                if f.get('url'):
-                    formats.append({
-                        'format_id': f.get('format_id'),
-                        'ext': f.get('ext'),
-                        'resolution': f.get('resolution'),
-                        'height': f.get('height'),
-                        'filesize': f.get('filesize') or f.get('filesize_approx'),
-                        'url': f.get('url')[:100] + '...' if f.get('url') else None
-                    })
-
-            return jsonify({
-                'title': info.get('title'),
-                'thumbnail': info.get('thumbnail'),
-                'duration': info.get('duration'),
-                'formats': formats[:20]
-            })
-
-        except Exception as e:
-            return jsonify({'error': f'Error obteniendo streams: {str(e)}'}), 500
+            return jsonify({'error': f'Error comunicando con el núcleo: {str(e)}'}), 500
