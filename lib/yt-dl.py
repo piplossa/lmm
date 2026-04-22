@@ -2,7 +2,7 @@ import requests
 from flask import request, jsonify, redirect
 
 # Apuntamos directo al núcleo de Cobalt
-COBALT_URL = "https://dl09.yt-dl.click/api/json"
+COBALT_URL = "https://dl09.yt-dl.click/"
 
 def register(app):
     @app.route('/download_audio_v2', methods=['GET'])
